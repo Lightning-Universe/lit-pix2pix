@@ -11,3 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+dataset = FacadesDataset(path, target_size=target_size)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+pix2pix = Pix2Pix(3, 3, learning_rate=lr, lambda_recon=lambda_recon, display_step=display_step)
+trainer = pl.Trainer(max_epochs=1000, gpus=1)
+trainer.fit(pix2pix, dataloader)
