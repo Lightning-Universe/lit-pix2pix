@@ -203,6 +203,7 @@ data/
 .lightning
 node_modules/
 facades/
+outputs/
 
 # examples
 **/events.out.tfevents.*

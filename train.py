@@ -12,9 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dataset = FacadesDataset(path, target_size=target_size)
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+import os
+from src.dataset import FacadesDataset
+from torch.utils.data import DataLoader
+from src.pix2pix import Pix2Pix  
+import lightning as L
 
-pix2pix = Pix2Pix(3, 3, learning_rate=lr, lambda_recon=lambda_recon, display_step=display_step)
-trainer = pl.Trainer(max_epochs=1000, gpus=1)
-trainer.fit(pix2pix, dataloader)
+train_dataset = FacadesDataset(os.getcwd() + '/facades/train', target_size=256)
+train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+
+val_dataset = FacadesDataset(os.getcwd() + '/facades/val', target_size=256)
+val_dataloader = DataLoader(val_dataset, batch_size=8, shuffle=True)
+
+pix2pix = Pix2Pix(3, 3)
+trainer = L.Trainer(max_epochs=20, fast_dev_run=True)
+trainer.fit(pix2pix, train_dataloader, val_dataloader)

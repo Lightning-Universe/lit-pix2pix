@@ -1,3 +1,11 @@
+from torch.utils.data import Dataset
+from torch import nn
+from glob import glob
+from pathlib import Path
+from PIL import Image
+import torchvision as tv
+
+
 class FacadesDataset(Dataset):
     def __init__(self, path, target_size=None):
         self.filenames = glob(str(Path(path) / "*"))
@@ -9,7 +17,7 @@ class FacadesDataset(Dataset):
     def __getitem__(self, idx):
         filename = self.filenames[idx]
         image = Image.open(filename)
-        image = transforms.functional.to_tensor(image)
+        image = tv.transforms.functional.to_tensor(image)
         image_width = image.shape[2]
 
         real = image[:, :, : image_width // 2]

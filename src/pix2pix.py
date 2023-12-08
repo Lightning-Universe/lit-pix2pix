@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import torch, torch.nn as nn
 import lightning as L
 from src.layers import Generator, PatchGAN
-
+from src.visualize import display_image_pairs
 
 def _weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
@@ -29,6 +30,7 @@ class Pix2Pix(L.LightningModule):
     def __init__(self, in_channels, out_channels, learning_rate=0.0002, lambda_recon=200) -> None:
         super().__init__()
         self.save_hyperparameters()
+        self.automatic_optimization = False
 
         self.gen = Generator(in_channels, out_channels)
         self.patch_gan = PatchGAN(in_channels + out_channels)
@@ -72,18 +74,33 @@ class Pix2Pix(L.LightningModule):
     def forward(self, x):
         return x
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
         real, condition = batch
 
-        loss = None
-        if optimizer_idx == 0:
-            loss = self._disc_step(real, condition)
-            self.log("PatchGAN Loss", loss)
-        elif optimizer_idx == 1:
-            loss = self._gen_step(real, condition)
-            self.log("Generator Loss", loss)
+        opt_g, opt_d = self.optimizers()
+        
+        # Discriminator optimization step
+        d_loss = self._disc_step(real, condition)
+        self.log("PatchGAN Loss", d_loss)
+        opt_d.zero_grad()
+        self.manual_backward(d_loss)
+        opt_d.step()
 
-        return loss
+        # Generator optimization step
+        g_loss = self._gen_step(real, condition)
+        self.log("Generator Loss", g_loss)
+        opt_g.zero_grad()
+        self.manual_backward(g_loss)
+        opt_g.step()
+
+    def validation_step(self, batch, batch_idx):
+        real, condition = batch
+        generated_images = self.gen(condition)
+
+        if batch_idx <= 3:
+            path = os.getcwd() + f'/outputs/val-step-{self.global_step}-batch-{batch_idx}.png'
+            display_image_pairs(real, generated_images, path)
+
 
 
 if __name__ == "__main__":
